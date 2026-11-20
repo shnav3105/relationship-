@@ -1,0 +1,249 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Master & Family Details</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    margin: 0;
+    padding: 30px 15px;
+    background: #f4f5f7;
+    color: #222;
+}
+
+.container {
+    max-width: 650px;
+    margin: auto;
+}
+
+h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+.card {
+    background: white;
+    padding: 24px;
+    border-radius: 10px;
+    margin-bottom: 22px;
+    border: 1px solid #e5e5e5;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+button {
+    width: 100%;
+    padding: 13px;
+    background: #222;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+button:hover {
+    background: #444;
+}
+
+.status {
+    font-size: 13px;
+    margin-top: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Employee Master</h2>
+
+    <div class="card">
+        <form id="employeeForm">
+
+            <input type="text" id="employeeName"
+                placeholder="Employee Name" required>
+
+            <input type="text" id="department"
+                placeholder="Department">
+
+            <input type="text" id="designation"
+                placeholder="Designation">
+
+            <button type="submit">Save Employee</button>
+
+            <p class="status" id="employeeStatus"></p>
+        </form>
+    </div>
+
+    <h2>Family Details</h2>
+
+    <div class="card">
+        <form id="familyForm">
+
+            <select id="employeeSelect" required>
+                <option value="">Select Employee</option>
+            </select>
+
+            <input type="text" id="familyMemberName"
+                placeholder="Family Member Name" required>
+
+            <input type="text" id="relationship"
+                placeholder="Relationship">
+
+            <label>Date of Birth</label>
+            <input type="date" id="dateOfBirth">
+
+            <input type="text" id="occupation"
+                placeholder="Occupation">
+
+            <button type="submit">Save Family Details</button>
+
+            <p class="status" id="familyStatus"></p>
+        </form>
+    </div>
+
+</div>
+
+<script>
+
+// SUPABASE CONFIGURATION
+
+const SUPABASE_URL =
+"https://mvawihhxiaocmnngtanx.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_abAVsOXPc8LCWXy0ThxLSQ_bt4OiwnH";
+
+const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+// LOAD EMPLOYEES
+
+async function loadEmployees() {
+
+    const select = document.getElementById("employeeSelect");
+
+    const { data, error } = await supabaseClient
+        .from("employees")
+        .select("employee_id, employee_name")
+        .order("employee_name");
+
+    if (error) {
+        document.getElementById("employeeStatus").textContent =
+            error.message;
+        return;
+    }
+
+    select.innerHTML = '<option value="">Select Employee</option>';
+
+    data.forEach(employee => {
+
+        const option = document.createElement("option");
+
+        option.value = employee.employee_id;
+        option.textContent = employee.employee_name;
+
+        select.appendChild(option);
+
+    });
+}
+
+// SAVE EMPLOYEE
+
+document.getElementById("employeeForm")
+.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const status = document.getElementById("employeeStatus");
+
+    status.textContent = "Saving...";
+
+    const employee = {
+        employee_name: document.getElementById("employeeName").value.trim(),
+        department: document.getElementById("department").value.trim(),
+        designation: document.getElementById("designation").value.trim()
+    };
+
+    const { error } = await supabaseClient
+        .from("employees")
+        .insert([employee]);
+
+    if (error) {
+        status.textContent = "Error: " + error.message;
+        return;
+    }
+
+    status.textContent = "Employee saved successfully!";
+
+    this.reset();
+
+    await loadEmployees();
+
+});
+
+// SAVE FAMILY DETAILS
+
+document.getElementById("familyForm")
+.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const status = document.getElementById("familyStatus");
+
+    status.textContent = "Saving...";
+
+    const family = {
+        employee_id: document.getElementById("employeeSelect").value,
+        family_member_name: document.getElementById("familyMemberName").value.trim(),
+        relationship: document.getElementById("relationship").value.trim(),
+        date_of_birth: document.getElementById("dateOfBirth").value || null,
+        occupation: document.getElementById("occupation").value.trim()
+    };
+
+    const { error } = await supabaseClient
+        .from("family_details")
+        .insert([family]);
+
+    if (error) {
+        status.textContent = "Error: " + error.message;
+        return;
+    }
+
+    status.textContent = "Family details saved successfully!";
+
+    this.reset();
+
+    await loadEmployees();
+
+});
+
+// INITIALIZE
+
+loadEmployees();
+
+</script>
+
+</body>
+</html>
